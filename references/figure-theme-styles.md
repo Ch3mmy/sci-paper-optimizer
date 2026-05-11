@@ -144,7 +144,10 @@ Palette:
 
 ## R ggplot2 Theme Template
 
-Use as a starting point; adjust only after inspecting final exports.
+For production work, prefer sourcing `scripts/sci_plot_theme.R` so dimensions,
+palettes, scales, and save functions stay consistent across panels. The template
+below shows the core style if a standalone snippet is needed; adjust only after
+inspecting final exports.
 
 ```r
 theme_sci_minimal <- function(base_size = 7, base_family = "Arial") {
@@ -312,4 +315,5 @@ Retained preview set:
 - `biology_proteomics.svg`: protein abundance, domain/lollipop, model effect, and enrichment views.
 - `biology_functional.svg`: ranked terms, enrichment dot plot, and category-transition display.
 - `biology_faceted_epigenomics.svg`: multi-species and CG/CHG/CHH faceted methylation, DMR volcano panels, genome tracks, and epigenetic legend grammar.
+- `figure_quality_comparison.svg`: side-by-side weak versus recommended plotting choices for statistical summaries and heatmaps.
 - `panel_assembly_balanced.svg`: balanced 2x2 publication-style panel assembly with external A/B/C/D labels.

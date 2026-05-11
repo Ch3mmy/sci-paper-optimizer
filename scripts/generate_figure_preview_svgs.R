@@ -78,7 +78,7 @@ pub_theme <- function(base_size = 7, grid = FALSE) {
       axis.ticks.length = unit(1.1, "mm"),
       panel.grid.major = if (grid) element_line(linewidth = 0.20, color = "#E7E7E7") else element_blank(),
       panel.grid.minor = element_blank(),
-      plot.title = element_text(size = base_size + 0.4, face = "bold", hjust = 0),
+      plot.title = element_text(size = base_size + 0.2, face = "bold", hjust = 0),
       legend.title = element_text(size = base_size - 0.2),
       legend.text = element_text(size = base_size - 0.5),
       legend.key.size = unit(2.7, "mm"),
@@ -109,6 +109,7 @@ palettes <- list(
 )
 
 set.seed(19)
+stage_labs <- c("E1", "E2", "M", "L1", "L2")
 
 stage_df <- expand.grid(stage = 1:5, treatment = c("Control", "Stress"), KEEP.OUT.ATTRS = FALSE)
 stage_df$mean <- ifelse(stage_df$treatment == "Control",
@@ -120,10 +121,11 @@ stage_raw <- do.call(rbind, lapply(seq_len(nrow(stage_df)), function(i) {
              value = rnorm(6, stage_df$mean[i], stage_df$se[i] * 1.7))
 }))
 
-heat_df <- expand.grid(gene = paste0("G", sprintf("%02d", 1:12)),
+gene_labels <- c("DOG1", "ABI3", "FUS3", "LEC1", "LEC2", "NCED6", "CYP707A2", "RDR2", "NRPD1", "DCL3", "SUVH4", "DRM2")
+heat_df <- expand.grid(gene = gene_labels,
                        sample = paste0(rep(c("C", "S"), each = 4), 1:4),
                        KEEP.OUT.ATTRS = FALSE)
-heat_df$gene <- factor(heat_df$gene, levels = rev(unique(heat_df$gene)))
+heat_df$gene <- factor(heat_df$gene, levels = rev(gene_labels))
 heat_df$sample <- factor(heat_df$sample, levels = unique(heat_df$sample))
 heat_df$value <- sin(as.numeric(heat_df$gene) / 2.2) + cos(as.numeric(heat_df$sample) / 2.1) + rnorm(nrow(heat_df), sd = 0.22)
 heat_df$bin <- cut(heat_df$value, breaks = c(-Inf, -1.0, -0.35, 0.35, 1.0, Inf),
@@ -137,7 +139,8 @@ effect_df <- data.frame(
 )
 
 enrich_df <- data.frame(
-  term = factor(c("ABA response", "Cell cycle", "DNA repair", "Cell wall", "Photosynthesis"), levels = rev(c("ABA response", "Cell cycle", "DNA repair", "Cell wall", "Photosynthesis"))),
+  term = factor(c("Seed dormancy", "ABA signaling", "DNA methylation", "Cell wall", "Stress response"),
+                levels = rev(c("Seed dormancy", "ABA signaling", "DNA methylation", "Cell wall", "Stress response"))),
   ratio = c(0.34, 0.25, 0.22, 0.17, 0.13),
   fdr = c(2e-5, 4e-4, 0.002, 0.012, 0.043),
   count = c(45, 33, 28, 21, 17)
@@ -152,11 +155,11 @@ make_theme_plots <- function(pal) {
                position = position_jitter(width = 0.045, height = 0)) +
     geom_line(linewidth = 0.48) +
     geom_point(size = 1.35) +
-    scale_x_continuous(breaks = 1:5, labels = paste0("S", 1:5)) +
+    scale_x_continuous(breaks = 1:5, labels = stage_labs) +
     scale_color_manual(values = c(Control = pal$control, Stress = pal$stress)) +
     scale_fill_manual(values = c(Control = pal$control, Stress = pal$stress)) +
     coord_cartesian(ylim = c(0.75, 3.05), clip = "off") +
-    labs(title = "Development trajectory", x = "Stage", y = "Response", color = NULL, fill = NULL) +
+    labs(title = "Trajectory", x = "Stage", y = "Response", color = NULL, fill = NULL) +
     pub_theme(6.4, TRUE) +
     theme(legend.position = c(0.04, 0.96), legend.justification = c(0, 1))
 
@@ -164,7 +167,7 @@ make_theme_plots <- function(pal) {
   heat <- ggplot(heat_df, aes(sample, gene, fill = bin)) +
     geom_tile(color = tile_border, linewidth = 0.12) +
     scale_fill_manual(values = heat_cols, name = "z bin") +
-    labs(title = "Expression module", x = NULL, y = NULL) +
+    labs(title = "Dormancy module", x = NULL, y = NULL) +
     pub_theme(6.1, FALSE) +
     theme(axis.ticks = element_blank(), axis.line = element_blank(), legend.position = "right")
 
@@ -172,25 +175,25 @@ make_theme_plots <- function(pal) {
     geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.25, color = "#666666") +
     geom_errorbar(aes(xmin = lo, xmax = hi), orientation = "y", width = 0.12, linewidth = 0.45, color = pal$stress) +
     geom_point(size = 1.7, color = pal$accent) +
-    labs(title = "Model contrasts", x = "Effect (95% CI)", y = NULL) +
+    labs(title = "Contrasts", x = "Effect (95% CI)", y = NULL) +
     pub_theme(6.3, FALSE)
 
-  dot <- standard_enrichment_dot(enrich_df, "Functional enrichment")
+  dot <- standard_enrichment_dot(enrich_df, "Enrichment")
 
   list(line = line, heat = heat, forest = forest, dot = dot)
 }
 
 draw_four_panel_theme <- function(key, pal) {
   plots <- make_theme_plots(pal)
-  save_svg(paste0("theme_system_", key), 7.1, 4.8, function() {
+  save_svg(paste0("theme_system_", key), 9.2, 5.0, function() {
     grid.newpage()
     grid.rect(gp = gpar(fill = "white", col = NA))
     grid.text(pal$name, x = unit(0.03, "npc"), y = unit(0.97, "npc"), just = c("left", "top"),
               gp = gpar(fontsize = 12, fontface = "bold", col = "#222222"))
-    draw_plot(plots$line, 0.27, 0.70, 0.42, 0.38, "A")
-    draw_plot(plots$heat, 0.75, 0.70, 0.42, 0.38, "B")
-    draw_plot(plots$forest, 0.27, 0.25, 0.42, 0.38, "C")
-    draw_plot(plots$dot, 0.75, 0.25, 0.42, 0.38, "D")
+    draw_plot(plots$line, 0.27, 0.70, 0.40, 0.37, "A")
+    draw_plot(plots$heat, 0.74, 0.70, 0.42, 0.37, "B")
+    draw_plot(plots$forest, 0.27, 0.25, 0.40, 0.37, "C")
+    draw_plot(plots$dot, 0.74, 0.25, 0.42, 0.37, "D")
   })
 }
 
@@ -225,13 +228,13 @@ save_svg("palette_reference", 7.1, 3.4, function() {
   }
 })
 
-raw_bar <- do.call(rbind, lapply(c("WT", "mut1", "mut2"), function(g) {
-  data.frame(group = g, value = rnorm(8, c(WT = 1.0, mut1 = 1.55, mut2 = 0.78)[g], 0.18))
+raw_bar <- do.call(rbind, lapply(c("WT", "ABA-", "DOG1+"), function(g) {
+  data.frame(group = g, value = rnorm(8, c(WT = 1.0, "ABA-" = 1.55, "DOG1+" = 0.78)[g], 0.18))
 }))
-raw_bar$group <- factor(raw_bar$group, levels = c("WT", "mut1", "mut2"))
+raw_bar$group <- factor(raw_bar$group, levels = c("WT", "ABA-", "DOG1+"))
 bar_sum <- aggregate(value ~ group, raw_bar, function(x) c(mean = mean(x), se = sd(x) / sqrt(length(x))))
 bar_sum <- data.frame(group = bar_sum$group, mean = bar_sum$value[, "mean"], se = bar_sum$value[, "se"])
-bar_sum$group <- factor(bar_sum$group, levels = c("WT", "mut1", "mut2"))
+bar_sum$group <- factor(bar_sum$group, levels = c("WT", "ABA-", "DOG1+"))
 
 box_df <- do.call(rbind, lapply(c("Root", "Stem", "Leaf", "Seed"), function(tissue) {
   data.frame(tissue = tissue, value = rnorm(18, c(Root = 3.0, Stem = 3.6, Leaf = 4.4, Seed = 2.6)[tissue], 0.42))
@@ -254,9 +257,9 @@ make_quant_plots <- function() {
     annotate("segment", x = 1, xend = 1, y = 1.98, yend = 2.03, linewidth = 0.28) +
     annotate("segment", x = 2, xend = 2, y = 1.98, yend = 2.03, linewidth = 0.28) +
     annotate("text", x = 1.5, y = 2.12, label = "Holm adj. P = 0.018", size = 2.15) +
-    scale_fill_manual(values = c(WT = "#7A7A7A", mut1 = pal_npg[["cyan"]], mut2 = pal_npg[["red"]])) +
+    scale_fill_manual(values = c(WT = "#7A7A7A", "ABA-" = pal_npg[["cyan"]], "DOG1+" = pal_npg[["red"]])) +
     coord_cartesian(ylim = c(0, 2.25), clip = "off") +
-    labs(title = "Replicate summary", x = NULL, y = "Relative expression") +
+    labs(title = "Expression", x = NULL, y = "Relative expression") +
     pub_theme(6.5, FALSE) +
     theme(legend.position = "none")
 
@@ -266,7 +269,7 @@ make_quant_plots <- function() {
     geom_text(data = letters_df, aes(tissue, y, label = label), inherit.aes = FALSE, size = 2.5, fontface = "bold") +
     scale_fill_manual(values = c(Root = pal_npg[["teal"]], Stem = pal_npg[["cyan"]], Leaf = pal_npg[["navy"]], Seed = pal_npg[["sand"]])) +
     coord_cartesian(ylim = c(1.6, 5.35), clip = "off") +
-    labs(title = "Post hoc letters", x = NULL, y = "Metabolite level") +
+    labs(title = "Post hoc", x = NULL, y = "Metabolite level") +
     pub_theme(6.5, FALSE) +
     theme(legend.position = "none")
 
@@ -276,7 +279,7 @@ make_quant_plots <- function() {
     annotate("text", x = 2, y = max(vio_df$score) + 0.18, label = "Kruskal-Wallis FDR = 0.006", size = 2.1) +
     scale_fill_manual(values = c("Cluster 1" = "#7A7A7A", "Cluster 2" = pal_npg[["cyan"]], "Cluster 3" = pal_npg[["red"]])) +
     coord_cartesian(ylim = c(min(vio_df$score) - 0.12, max(vio_df$score) + 0.36), clip = "off") +
-    labs(title = "Distribution shape", x = NULL, y = "Module score") +
+    labs(title = "Distribution", x = NULL, y = "Module score") +
     pub_theme(6.5, FALSE) +
     theme(legend.position = "none")
 
@@ -284,10 +287,10 @@ make_quant_plots <- function() {
     geom_errorbar(aes(ymin = mean - 1.96 * se, ymax = mean + 1.96 * se), width = 0.08, linewidth = 0.28) +
     geom_line(linewidth = 0.46) +
     geom_point(size = 1.2) +
-    scale_x_continuous(breaks = 1:5, labels = paste0("S", 1:5)) +
+    scale_x_continuous(breaks = 1:5, labels = stage_labs) +
     scale_color_manual(values = c(Control = "#7A7A7A", Stress = "#0072B2")) +
     scale_fill_manual(values = c(Control = "#7A7A7A", Stress = "#0072B2")) +
-    labs(title = "Ordered trajectory", x = "Stage", y = "Signal", color = NULL, fill = NULL) +
+    labs(title = "Trajectory", x = "Stage", y = "Signal", color = NULL, fill = NULL) +
     pub_theme(6.5, TRUE) +
     theme(legend.position = c(0.05, 0.95), legend.justification = c(0, 1))
   list(bar = bar, box = box, violin = violin, line = line)
@@ -328,7 +331,7 @@ save_svg("biology_genomics", 7.1, 4.8, function() {
     geom_hline(yintercept = -log10(5e-6), linetype = "dashed", linewidth = 0.25, color = "#555555") +
     scale_x_continuous(breaks = centers, labels = names(chr_lengths), expand = expansion(mult = c(0.01, 0.02))) +
     scale_color_manual(values = c("FALSE" = pal_npg[["navy"]], "TRUE" = "#9A9A9A")) +
-    labs(title = "Chromosome-wide signal", x = "Chromosome", y = expression(-log[10]("P"))) +
+    labs(title = "Genome signal", x = "Chromosome", y = expression(-log[10]("P"))) +
     pub_theme(6.4, FALSE) +
     theme(legend.position = "none")
 
@@ -336,7 +339,7 @@ save_svg("biology_genomics", 7.1, 4.8, function() {
     geom_segment(aes(x = 0, xend = 96, y = track, yend = track), color = "#D5D5D5", linewidth = 1.4, lineend = "round") +
     geom_segment(aes(x = start, xend = end, y = track, yend = track, color = class), linewidth = 3.6, lineend = "butt") +
     scale_color_manual(values = c(Gene = pal_npg[["navy"]], Low = "#91D1C2", High = "#F39B7F", Hyper = pal_npg[["red"]], Hypo = pal_npg[["cyan"]])) +
-    labs(title = "Feature tracks", x = "Position (Mb)", y = NULL, color = NULL) +
+    labs(title = "Tracks", x = "Position (Mb)", y = NULL, color = NULL) +
     pub_theme(6.3, FALSE) +
     theme(legend.position = "bottom")
 
@@ -379,7 +382,7 @@ save_svg("biology_transcriptomics", 7.1, 4.8, function() {
     geom_vline(xintercept = c(-1, 1), linetype = "dashed", linewidth = 0.23, color = "#666666") +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed", linewidth = 0.23, color = "#666666") +
     scale_color_manual(values = c(Down = pal_npg[["cyan"]], NS = "#B8B8B8", Up = pal_npg[["red"]])) +
-    labs(title = "Differential expression", x = expression(log[2]("fold change")), y = expression(-log[10]("FDR")), color = NULL) +
+    labs(title = "DE genes", x = expression(log[2]("fold change")), y = expression(-log[10]("FDR")), color = NULL) +
     pub_theme(6.3, FALSE) +
     theme(legend.position = c(0.04, 0.96), legend.justification = c(0, 1))
 
@@ -395,11 +398,11 @@ save_svg("biology_transcriptomics", 7.1, 4.8, function() {
   p_corr <- ggplot(corr_df, aes(x, y, fill = bin)) +
     geom_tile(color = tile_border, linewidth = 0.12) +
     scale_fill_manual(values = c("0.70-0.82" = "#D7E8F3", "0.82-0.88" = "#91D1C2", "0.88-0.94" = "#4DBBD5", "0.94-1.00" = "#3C5488"), name = "r") +
-    labs(title = "Sample correlation", x = NULL, y = NULL) +
+    labs(title = "Correlation", x = NULL, y = NULL) +
     pub_theme(6.0, FALSE) +
     theme(axis.ticks = element_blank(), axis.line = element_blank())
 
-  p_heat <- make_theme_plots(palettes$omics)$heat + labs(title = "Expression heatmap")
+  p_heat <- make_theme_plots(palettes$omics)$heat + labs(title = "Expression")
   ma_df <- data.frame(base = 10 ^ runif(n, 1, 5), fc = rnorm(n, 0, 0.55), fdr = pmin(runif(n) ^ 2.2, 0.99))
   ma_df$class <- ifelse(ma_df$fdr < 0.05 & ma_df$fc > 1, "Up", ifelse(ma_df$fdr < 0.05 & ma_df$fc < -1, "Down", "NS"))
   p_ma <- ggplot(ma_df, aes(log10(base), fc, color = class)) +
@@ -407,7 +410,7 @@ save_svg("biology_transcriptomics", 7.1, 4.8, function() {
     geom_hline(yintercept = c(-1, 1), linetype = "dashed", color = "#666666", linewidth = 0.22) +
     geom_point(size = 0.58) +
     scale_color_manual(values = c(Down = pal_npg[["cyan"]], NS = "#B8B8B8", Up = pal_npg[["red"]])) +
-    labs(title = "MA pattern", x = expression(log[10]("mean expression")), y = expression(log[2]("fold change"))) +
+    labs(title = "MA plot", x = expression(log[10]("mean expression")), y = expression(log[2]("fold change"))) +
     pub_theme(6.3, FALSE)
   grid.newpage(); grid.rect(gp = gpar(fill = "white", col = NA))
   draw_plot(p_heat, 0.27, 0.70, 0.42, 0.38, "A")
@@ -428,7 +431,7 @@ save_svg("biology_proteomics", 7.1, 4.8, function() {
   p_heat <- ggplot(prot, aes(sample, protein, fill = bin)) +
     geom_tile(color = tile_border, linewidth = 0.12) +
     scale_fill_manual(values = c("low" = "#355C7D", "mild low" = "#7D9DBA", "mid" = neutral_mid, "mild high" = "#E2A0B0", "high" = "#C06C84"), name = "z bin") +
-    labs(title = "Protein abundance", x = "LC-MS/MS samples", y = NULL) +
+    labs(title = "Abundance", x = "LC-MS/MS samples", y = NULL) +
     pub_theme(6.2, FALSE) +
     theme(axis.ticks = element_blank(), axis.line = element_blank())
 
@@ -442,7 +445,7 @@ save_svg("biology_proteomics", 7.1, 4.8, function() {
     scale_fill_manual(values = c(Signal = "#99B898", Kinase = "#355C7D", Regulatory = "#F8B195")) +
     scale_color_manual(values = c(PTM = "#C06C84", variant = "#2A9D8F")) +
     scale_y_continuous(NULL, breaks = NULL, limits = c(0.75, 1.9)) +
-    labs(title = "Domain and PTM sites", x = "Protein coordinate (aa)", fill = NULL, color = NULL) +
+    labs(title = "Protein domains", x = "Protein coordinate (aa)", fill = NULL, color = NULL) +
     pub_theme(6.3, FALSE) +
     theme(axis.line.y = element_blank(), axis.ticks.y = element_blank(), legend.position = "bottom")
 
@@ -451,14 +454,14 @@ save_svg("biology_proteomics", 7.1, 4.8, function() {
     geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.25, color = "#666666") +
     geom_errorbar(aes(xmin = lo, xmax = hi), orientation = "y", width = 0.12, linewidth = 0.42, color = "#C06C84") +
     geom_point(size = 1.5, color = "#355C7D") +
-    labs(title = "Protein module effects", x = "Effect (95% CI)", y = NULL) +
+    labs(title = "Module effects", x = "Effect (95% CI)", y = NULL) +
     pub_theme(6.3, FALSE)
 
   grid.newpage(); grid.rect(gp = gpar(fill = "white", col = NA))
   draw_plot(p_heat, 0.27, 0.70, 0.42, 0.38, "A")
   draw_plot(p_lolli, 0.75, 0.70, 0.42, 0.38, "B")
   draw_plot(p_eff, 0.27, 0.25, 0.42, 0.38, "C")
-  draw_plot(standard_enrichment_dot(enrich_df, "Protein function terms"), 0.75, 0.25, 0.42, 0.38, "D")
+  draw_plot(standard_enrichment_dot(enrich_df, "Protein terms"), 0.75, 0.25, 0.42, 0.38, "D")
 })
 
 save_svg("biology_functional", 7.1, 4.8, function() {
@@ -468,10 +471,10 @@ save_svg("biology_functional", 7.1, 4.8, function() {
   p_bar <- ggplot(bar_df, aes(neglog10_fdr, term, fill = neglog10_fdr)) +
     geom_col(width = 0.58, color = "#333333", linewidth = 0.16) +
     scale_fill_gradientn(colors = c("#3C5488", "#4DBBD5", "#00A087", "#F39B7F", "#E64B35"), guide = "none") +
-    labs(title = "Ranked term evidence", x = expression(-log[10]("FDR")), y = NULL) +
+    labs(title = "Term ranking", x = expression(-log[10]("FDR")), y = NULL) +
     pub_theme(6.4, FALSE) +
     theme(legend.position = "none")
-  p_dot <- standard_enrichment_dot(enrich_df, "Enrichment dot plot")
+  p_dot <- standard_enrichment_dot(enrich_df, "Enrichment")
   grid.newpage(); grid.rect(gp = gpar(fill = "white", col = NA))
   draw_plot(p_bar, 0.27, 0.70, 0.42, 0.38, "A")
   draw_plot(p_dot, 0.75, 0.70, 0.42, 0.38, "B")
@@ -495,7 +498,7 @@ save_svg("biology_functional", 7.1, 4.8, function() {
   upViewport()
 })
 
-save_svg("biology_faceted_epigenomics", 7.1, 4.8, function() {
+save_svg("biology_faceted_epigenomics", 9.2, 5.0, function() {
   species <- c("A. marina", "R. apiculata")
   contexts <- c("CG", "CHG", "CHH")
   species_labs <- as_labeller(c(
@@ -516,7 +519,7 @@ save_svg("biology_faceted_epigenomics", 7.1, 4.8, function() {
     facet_grid(species ~ context, labeller = labeller(species = species_labs)) +
     scale_color_manual(values = context_cols, guide = "none") +
     scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0.08, 0.82)) +
-    labs(title = "Faceted methylation contexts", x = "Stage", y = "mC level") +
+    labs(title = "mC contexts", x = "Stage", y = "mC level") +
     pub_theme(5.8, TRUE) +
     theme(strip.text = element_text(size = 5.9, face = "bold"),
           panel.border = element_rect(color = "#BDBDBD", fill = NA, linewidth = 0.22),
@@ -533,7 +536,7 @@ save_svg("biology_faceted_epigenomics", 7.1, 4.8, function() {
     geom_hline(yintercept = -log10(0.05), linetype = "dashed", linewidth = 0.20, color = "#666666") +
     facet_wrap(~ context, nrow = 1) +
     scale_color_manual(values = dmr_cols, breaks = c("Hyper", "Hypo", "Stable")) +
-    labs(title = "DMR volcano by context", x = expression(Delta*" methylation"), y = expression(-log[10]("FDR")), color = NULL) +
+    labs(title = "DMRs", x = expression(Delta*" methylation"), y = expression(-log[10]("FDR")), color = NULL) +
     pub_theme(5.9, FALSE) +
     theme(strip.text = element_text(size = 6.0, face = "bold"),
           legend.position = c(0.02, 0.98), legend.justification = c(0, 1))
@@ -557,14 +560,14 @@ save_svg("biology_faceted_epigenomics", 7.1, 4.8, function() {
     scale_color_manual(values = context_cols, name = "Context") +
     scale_fill_manual(values = epigenome_cols, name = "Track") +
     scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(-0.24, 0.82)) +
-    labs(title = "Epigenomic tracks", x = "Position (kb)", y = "mC") +
+    labs(title = "Tracks", x = "Position (kb)", y = "mC") +
     pub_theme(5.9, FALSE) +
     theme(strip.text = element_text(size = 6.0, face = "bold"),
           legend.position = "bottom")
 
   draw_epi_legend <- function() {
     grid.rect(gp = gpar(fill = "white", col = NA))
-    grid.text("Epigenetic legend grammar", x = unit(0.03, "npc"), y = unit(0.94, "npc"), just = "left",
+    grid.text("Legend grammar", x = unit(0.03, "npc"), y = unit(0.94, "npc"), just = "left",
               gp = gpar(fontsize = 8, fontface = "bold", col = "#222222"))
     draw_group <- function(title, cols, x0, y0) {
       grid.text(title, x = unit(x0, "npc"), y = unit(y0, "npc"), just = "left",
@@ -587,21 +590,54 @@ save_svg("biology_faceted_epigenomics", 7.1, 4.8, function() {
   }
 
   grid.newpage(); grid.rect(gp = gpar(fill = "white", col = NA))
-  draw_plot(p_meth, 0.30, 0.70, 0.48, 0.38, "A")
-  draw_plot(p_dmr, 0.78, 0.70, 0.36, 0.38, "B")
-  draw_plot(p_track, 0.30, 0.25, 0.48, 0.38, "C")
-  pushViewport(viewport(x = unit(0.78, "npc"), y = unit(0.25, "npc"), width = unit(0.36, "npc"), height = unit(0.38, "npc")))
+  draw_plot(p_meth, 0.30, 0.70, 0.48, 0.37, "A")
+  draw_plot(p_dmr, 0.78, 0.70, 0.36, 0.37, "B")
+  draw_plot(p_track, 0.30, 0.25, 0.48, 0.37, "C")
+  pushViewport(viewport(x = unit(0.78, "npc"), y = unit(0.25, "npc"), width = unit(0.36, "npc"), height = unit(0.37, "npc")))
   draw_epi_legend()
   upViewport()
   grid.text("D", x = unit(0.59, "npc"), y = unit(0.47, "npc"), just = c("left", "top"),
             gp = gpar(fontsize = 12, fontface = "bold", col = "#222222"))
 })
 
-save_svg("panel_assembly_balanced", 7.1, 4.8, function() {
+save_svg("figure_quality_comparison", 9.2, 5.0, function() {
+  weak_bar <- ggplot(bar_sum, aes(group, mean, fill = group)) +
+    geom_col(width = 0.62, color = "#333333", linewidth = 0.18) +
+    scale_fill_manual(values = c(WT = "#CFCFCF", "ABA-" = "#9E9E9E", "DOG1+" = "#BDBDBD")) +
+    coord_cartesian(ylim = c(0, 2.25), clip = "off") +
+    labs(title = "Weak: mean only", x = NULL, y = "Relative expression") +
+    pub_theme(6.5, FALSE) +
+    theme(legend.position = "none")
+
+  strong_bar <- make_quant_plots()$bar +
+    labs(title = "Better: raw data + CI")
+
+  weak_heat <- ggplot(heat_df, aes(sample, gene, fill = value)) +
+    geom_tile(color = "#FFFFFF", linewidth = 0.22) +
+    scale_fill_gradientn(colors = c("#2C7BB6", "#00A6CA", "#FFFFBF", "#FDAE61", "#D7191C"), name = "value") +
+    labs(title = "Weak: rainbow-like scale", x = NULL, y = NULL) +
+    pub_theme(6.0, FALSE) +
+    theme(axis.ticks = element_blank(), axis.line = element_blank(), legend.position = "right")
+
+  strong_heat <- make_theme_plots(palettes$omics)$heat +
+    labs(title = "Better: stable z bins")
+
+  grid.newpage(); grid.rect(gp = gpar(fill = "white", col = NA))
+  grid.text("Common weak choices", x = unit(0.27, "npc"), y = unit(0.965, "npc"), just = c("center", "top"),
+            gp = gpar(fontsize = 10, fontface = "bold", col = "#555555"))
+  grid.text("Recommended publication grammar", x = unit(0.74, "npc"), y = unit(0.965, "npc"), just = c("center", "top"),
+            gp = gpar(fontsize = 10, fontface = "bold", col = "#222222"))
+  draw_plot(weak_bar, 0.27, 0.68, 0.40, 0.34, "A")
+  draw_plot(strong_bar, 0.74, 0.68, 0.42, 0.34, "B")
+  draw_plot(weak_heat, 0.27, 0.24, 0.40, 0.34, "C")
+  draw_plot(strong_heat, 0.74, 0.24, 0.42, 0.34, "D")
+})
+
+save_svg("panel_assembly_balanced", 9.2, 5.0, function() {
   plots <- make_quant_plots()
   grid.newpage(); grid.rect(gp = gpar(fill = "white", col = NA))
-  draw_plot(plots$bar, 0.27, 0.70, 0.42, 0.38, "A")
-  draw_plot(plots$box, 0.75, 0.70, 0.42, 0.38, "B")
-  draw_plot(plots$violin, 0.27, 0.25, 0.42, 0.38, "C")
-  draw_plot(plots$line, 0.75, 0.25, 0.42, 0.38, "D")
+  draw_plot(plots$bar, 0.27, 0.70, 0.40, 0.37, "A")
+  draw_plot(plots$box, 0.74, 0.70, 0.42, 0.37, "B")
+  draw_plot(plots$violin, 0.27, 0.25, 0.40, 0.37, "C")
+  draw_plot(plots$line, 0.74, 0.25, 0.42, 0.37, "D")
 })

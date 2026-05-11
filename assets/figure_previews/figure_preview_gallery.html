@@ -31,6 +31,10 @@
       gap: 18px;
       align-items: stretch;
     }
+    .grid.narrow {
+      grid-template-columns: minmax(0, 860px);
+      justify-content: center;
+    }
     .card {
       display: flex;
       flex-direction: column;
@@ -40,15 +44,18 @@
       border-radius: 8px;
       background: var(--panel);
     }
+    .card.wide { grid-column: 1 / -1; }
     .media {
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 430px;
+      height: 370px;
       padding: 12px;
       border-bottom: 1px solid var(--line);
       background: #ffffff;
     }
+    .card.compact .media { height: 280px; }
+    .card.wide .media { height: 620px; }
     .media img {
       display: block;
       width: 100%;
@@ -68,6 +75,8 @@
       body { padding: 18px; }
       .grid { grid-template-columns: 1fr; }
       .media { height: 300px; }
+      .card.wide .media { height: 360px; }
+      .card.compact .media { height: 260px; }
     }
   </style>
 </head>
@@ -78,17 +87,17 @@
   </header>
   <main>
     <h2>Palette Reference</h2>
-    <div class="grid">
-      <figure class="card"><div class="media"><img src="palette_reference.svg" alt="Publication palette reference"></div><figcaption><strong>Palette reference.</strong> Compact color families for categorical biology, plant ecology, genomics tracks, transcriptomics, and proteomics.</figcaption></figure>
+    <div class="grid narrow">
+      <figure class="card compact"><div class="media"><img src="palette_reference.svg" alt="Publication palette reference"></div><figcaption><strong>Palette reference.</strong> Compact color families for categorical biology, plant ecology, genomics tracks, transcriptomics, and proteomics.</figcaption></figure>
     </div>
 
     <h2>Theme Systems</h2>
     <p class="section-note">Each card uses the same four-panel scientific figure structure so the visual differences come from the theme, not from changing the figure type.</p>
     <div class="grid">
-      <figure class="card"><div class="media"><img src="theme_system_evidence.svg" alt="Evidence minimal theme system"></div><figcaption><strong>Evidence minimal.</strong> Restrained colors, compact typography, raw points, uncertainty, heatmap, model contrast, and enrichment panel.</figcaption></figure>
-      <figure class="card"><div class="media"><img src="theme_system_plant.svg" alt="Plant natural theme system"></div><figcaption><strong>Plant natural.</strong> Green and earth-tone accents for plant, ecological, and developmental biology narratives.</figcaption></figure>
-      <figure class="card"><div class="media"><img src="theme_system_omics.svg" alt="Omics compact theme system"></div><figcaption><strong>Omics compact.</strong> Diverging red-blue logic for expression matrices, differential signals, and compact multi-panel omics figures.</figcaption></figure>
-      <figure class="card"><div class="media"><img src="theme_system_mechanism.svg" alt="Mechanism clean theme system"></div><figcaption><strong>Mechanism clean.</strong> Structured palette for mechanism diagrams and evidence-level biological models.</figcaption></figure>
+      <figure class="card wide"><div class="media"><img src="theme_system_evidence.svg" alt="Evidence minimal theme system"></div><figcaption><strong>Evidence minimal.</strong> Restrained colors, compact typography, raw points, uncertainty, heatmap, model contrast, and enrichment panel.</figcaption></figure>
+      <figure class="card wide"><div class="media"><img src="theme_system_plant.svg" alt="Plant natural theme system"></div><figcaption><strong>Plant natural.</strong> Green and earth-tone accents for plant, ecological, and developmental biology narratives.</figcaption></figure>
+      <figure class="card wide"><div class="media"><img src="theme_system_omics.svg" alt="Omics compact theme system"></div><figcaption><strong>Omics compact.</strong> Diverging red-blue logic for expression matrices, differential signals, and compact multi-panel omics figures.</figcaption></figure>
+      <figure class="card wide"><div class="media"><img src="theme_system_mechanism.svg" alt="Mechanism clean theme system"></div><figcaption><strong>Mechanism clean.</strong> Structured palette for mechanism diagrams and evidence-level biological models.</figcaption></figure>
     </div>
 
     <h2>Integrated Biological Figures</h2>
@@ -98,12 +107,17 @@
       <figure class="card"><div class="media"><img src="biology_transcriptomics.svg" alt="Transcriptomics figure"></div><figcaption><strong>Transcriptomics panels.</strong> Expression heatmap, volcano plot, sample correlation, and MA-style signal view.</figcaption></figure>
       <figure class="card"><div class="media"><img src="biology_proteomics.svg" alt="Proteomics figure"></div><figcaption><strong>Proteomics panels.</strong> Protein abundance, domain lollipop, effect estimate, and functional enrichment views.</figcaption></figure>
       <figure class="card"><div class="media"><img src="biology_functional.svg" alt="Functional biology figure"></div><figcaption><strong>Functional panels.</strong> Ranked terms, enrichment dot plot, and category-transition schematic.</figcaption></figure>
-      <figure class="card"><div class="media"><img src="biology_faceted_epigenomics.svg" alt="Faceted epigenomics figure"></div><figcaption><strong>Faceted epigenomics.</strong> Multi-species and CG/CHG/CHH comparisons with DMR volcano panels, genome tracks, and an explicit epigenetic legend.</figcaption></figure>
+      <figure class="card wide"><div class="media"><img src="biology_faceted_epigenomics.svg" alt="Faceted epigenomics figure"></div><figcaption><strong>Faceted epigenomics.</strong> Multi-species and CG/CHG/CHH comparisons with DMR volcano panels, genome tracks, and an explicit epigenetic legend.</figcaption></figure>
+    </div>
+
+    <h2>Quality Comparison</h2>
+    <div class="grid">
+      <figure class="card wide"><div class="media"><img src="figure_quality_comparison.svg" alt="Common weak plotting choices versus publication-style plotting choices"></div><figcaption><strong>Quality comparison.</strong> Side-by-side examples showing why raw observations, intervals, controlled scales, and stable color grammar usually read better than mean-only bars or rainbow-like heatmaps.</figcaption></figure>
     </div>
 
     <h2>Panel Assembly</h2>
     <div class="grid">
-      <figure class="card"><div class="media"><img src="panel_assembly_balanced.svg" alt="Balanced multi-panel assembly"></div><figcaption><strong>Balanced assembly.</strong> Four matched panels in a publication-style 2x2 layout with external A/B/C/D labels.</figcaption></figure>
+      <figure class="card wide"><div class="media"><img src="panel_assembly_balanced.svg" alt="Balanced multi-panel assembly"></div><figcaption><strong>Balanced assembly.</strong> Four matched panels in a publication-style 2x2 layout with external A/B/C/D labels.</figcaption></figure>
     </div>
   </main>
 </body>

@@ -81,6 +81,10 @@ Use these defaults for biological, biomedical, omics, ecology, and experimental 
 
 For main figures, prefer one chart type per evidence question. Do not include every chart type simply because it exists.
 
+For concrete R/ggplot2 skeletons for these chart types, read `plot-recipes.md`
+and reuse `../scripts/sci_plot_theme.R` instead of rebuilding theme and palette
+code ad hoc.
+
 ## Faceted and Multi-Context Figures
 
 Use faceting when the same question must be compared across species, tissues,
