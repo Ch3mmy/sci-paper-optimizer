@@ -1,0 +1,4 @@
+interface:
+  display_name: "SCI Paper Optimizer"
+  short_description: "Improve SCI manuscript logic and figures"
+  default_prompt: "Use $sci-paper-optimizer to review my SCI manuscript logic, claims, and figure plan."
